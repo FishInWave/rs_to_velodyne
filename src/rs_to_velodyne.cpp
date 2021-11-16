@@ -96,6 +96,20 @@ void publish_points(T &new_pc, const sensor_msgs::PointCloud2 &old_msg) {
     pc_new_msg.header.frame_id = "velodyne";
     pubRobosensePC.publish(pc_new_msg);
 }
+template<typename T>
+void publish_points(T &new_pc, const sensor_msgs::PointCloud2 &old_msg,ros::Time scan_begin_time) {
+    // pc properties
+    new_pc->is_dense = true;
+
+    // publish
+    sensor_msgs::PointCloud2 pc_new_msg;
+    pcl::toROSMsg(*new_pc, pc_new_msg);
+    pc_new_msg.header = old_msg.header;
+    pc_new_msg.header.stamp = scan_begin_time;
+    pc_new_msg.header.frame_id = "velodyne";
+    pubRobosensePC.publish(pc_new_msg);
+}
+
 
 void rsHandler_XYZI(sensor_msgs::PointCloud2 pc_msg) {
     pcl::PointCloud<pcl::PointXYZI>::Ptr pc(new pcl::PointCloud<pcl::PointXYZI>());
@@ -159,23 +173,20 @@ void add_ring(const typename pcl::PointCloud<T_in_p>::Ptr &pc_in,
     }
 }
 
+
 template<typename T_in_p, typename T_out_p>
-void add_time(const typename pcl::PointCloud<T_in_p>::Ptr &pc_in,
+ros::Time add_time(const typename pcl::PointCloud<T_in_p>::Ptr &pc_in,
               const typename pcl::PointCloud<T_out_p>::Ptr &pc_out) {
     // to new pointcloud
+    double start_time = pc_in->points[0].timestamp;
     int valid_point_id = 0;
-    double start_time;
-    bool isValid = false;
     for (int point_id = 0; point_id < pc_in->points.size(); ++point_id) {
         if (has_nan(pc_in->points[point_id]))
             continue;
-        if(!isValid){
-            start_time = pc_in->points[point_id].timestamp;
-            isValid = true;
-        }
         // 跳过nan点
         pc_out->points[valid_point_id++].time = float(pc_in->points[point_id].timestamp - start_time);
     }
+    return ros::Time().fromSec(start_time);
 }
 
 void rsHandler_XYZIRT(const sensor_msgs::PointCloud2 &pc_msg) {
@@ -186,8 +197,8 @@ void rsHandler_XYZIRT(const sensor_msgs::PointCloud2 &pc_msg) {
         pcl::PointCloud<VelodynePointXYZIRT>::Ptr pc_out(new pcl::PointCloud<VelodynePointXYZIRT>());
         handle_pc_msg<RsPointXYZIRT, VelodynePointXYZIRT>(pc_in, pc_out);
         add_ring<RsPointXYZIRT, VelodynePointXYZIRT>(pc_in, pc_out);
-        add_time<RsPointXYZIRT, VelodynePointXYZIRT>(pc_in, pc_out);
-        publish_points(pc_out, pc_msg);
+        ros::Time t = add_time<RsPointXYZIRT, VelodynePointXYZIRT>(pc_in, pc_out);
+        publish_points(pc_out, pc_msg,t);
     } else if (output_type == "XYZIR") {
         pcl::PointCloud<VelodynePointXYZIR>::Ptr pc_out(new pcl::PointCloud<VelodynePointXYZIR>());
         handle_pc_msg<RsPointXYZIRT, VelodynePointXYZIR>(pc_in, pc_out);

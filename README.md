@@ -35,3 +35,6 @@ The output point clouds are **XYZIR** point cloud `/velodyne_points` in Velodyne
 
 ## Publishes
 `/velodyne_points`: sensor_msgs.PointCloud2, the frame_id is `velodyne`.
+
+## 改动
+2021-11-16 header.stamp换算至帧首，使其与velodyne的定义一致。
