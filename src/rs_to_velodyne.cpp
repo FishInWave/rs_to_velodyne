@@ -164,11 +164,17 @@ void add_time(const typename pcl::PointCloud<T_in_p>::Ptr &pc_in,
               const typename pcl::PointCloud<T_out_p>::Ptr &pc_out) {
     // to new pointcloud
     int valid_point_id = 0;
+    double start_time;
+    bool isValid = false;
     for (int point_id = 0; point_id < pc_in->points.size(); ++point_id) {
         if (has_nan(pc_in->points[point_id]))
             continue;
+        if(!isValid){
+            start_time = pc_in->points[point_id].timestamp;
+            isValid = true;
+        }
         // 跳过nan点
-        pc_out->points[valid_point_id++].time = float(pc_in->points[point_id].timestamp - pc_in->points[0].timestamp);
+        pc_out->points[valid_point_id++].time = float(pc_in->points[point_id].timestamp - start_time);
     }
 }
 
