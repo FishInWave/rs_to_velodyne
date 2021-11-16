@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
     } else {
         // 输出点云类型
         output_type = argv[2];
-
+        // 输出的velodyne的线束是按照rslidar的来，没做映射。
         if (std::strcmp("XYZI", argv[1]) == 0) {
             subRobosensePC = nh.subscribe("/rslidar_points", 1, rsHandler_XYZI);
         } else if (std::strcmp("XYZIRT", argv[1]) == 0) {
